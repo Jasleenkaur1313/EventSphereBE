@@ -1,0 +1,1495 @@
+Homepage:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage | EventSphere</title>
+    <!-- Tailwind CSS CDN for the Categories section -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind to ensure custom styles work and use fallback font
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Arial', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* ADDED: Smooth scroll behavior and scroll-padding for sticky navbar */
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 125px; 
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+            /* Default Light Mode Variables */
+            --bg-color: #f9fafc;
+            --text-color: #222;
+            --card-bg-color: #fff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --secondary-text: #555;
+            --navbar-bg: crimson;
+            /* NEW CALENDAR VARIABLES */
+            --calendar-header: crimson;
+            --calendar-day-bg: #fff;
+            --calendar-border: #ddd;
+            --calendar-dayname-bg: #f3f3f3;
+        }
+
+        /* --- Dark Mode Styles using CSS Checkbox Hack --- */
+        #theme-toggle:checked ~ .page-wrapper {
+            --bg-color: #121212;
+            --text-color: #fff;
+            --card-bg-color: #1a1a1a;
+            --shadow-color: rgba(255, 255, 255, 0.1);
+            --secondary-text: #ccc;
+            --navbar-bg: #444; 
+            /* NEW CALENDAR DARK MODE MAPPING */
+            --calendar-header: #c41e3a; 
+            --calendar-day-bg: #2a2a2a;
+            --calendar-border: #444;
+            --calendar-dayname-bg: #333;
+        }
+
+        /* New main wrapper to apply styles to all content */
+        .page-wrapper {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding-bottom: 20px;
+        }
+
+        /* --- Navbar Styles (FIXED Z-INDEX) --- */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--navbar-bg);
+            color: white;
+            font-family: Calibri, sans-serif;
+            position: sticky; /* Keep navbar visible during scroll */
+            top: 0;
+            z-index: 500; /* INCREASED Z-INDEX to ensure navbar is always on top */
+        }
+
+        .navdiv {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .logo img {
+            height: 65px;
+            width: auto;
+        }
+
+        li {
+            list-style: none;
+            display: inline-block;
+            margin-right: 25px; 
+        }
+
+        li a, .mode-btn {
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .mode-btn {
+            background-color: crimson;
+            padding: 8px 16px;
+            border-radius: 5px;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            background-color: #c41e3a;
+        }
+
+        /* Hamburger (hidden checkbox + label icon) */
+        #menu-toggle, #theme-toggle {
+            display: none;
+        }
+
+        .menu-icon {
+            display: none;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* 📱 Responsive */
+        @media (max-width: 768px) {
+            ul {
+                display: none;
+                flex-direction: column;
+                background: crimson;
+                position: absolute;
+                top: 70px;
+                right: 0;
+                width: 200px;
+                padding: 20px;
+                z-index: 9; /* Below the navbar */
+            }
+
+            /* Show menu when checkbox is checked */
+            #menu-toggle:checked ~ ul {
+                display: flex;
+            }
+
+            .menu-icon {
+                display: block; /* show hamburger */
+            }
+            html { scroll-padding-top: 120px; }
+        }
+
+        /* --- Image Slider Styles (Updated for JS control) --- */
+        .banner_section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            position: relative;
+            margin-top: 40px; 
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        .slider {
+            width: 100%;
+            height: 50vh; /* Using viewport height for responsiveness */
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slides {
+            display: flex;
+            height: 100%;
+            /* Transition will be controlled by JS for infinite loop */
+            transition: transform 1.4s cubic-bezier(0.77, 0, 0.175, 1);
+            will-change: transform;
+        }
+
+        .slide {
+            min-width: 100%; /* Changed from 25% for JS-controlled slides */
+            height: 100%;
+            flex: 0 0 auto;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        /* Navigation Buttons */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.4); 
+            border: none;
+            font-size: 2rem;
+            padding: 10px 20px;
+            cursor: pointer;
+            color: white;
+            z-index: 100; /* Slider arrows Z-Index */
+            transition: background-color 0.3s ease;
+            user-select: none;
+        }
+
+        .nav-btn:hover {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+
+        #prevBtn { left: 10px; }
+        #nextBtn { right: 10px; }
+
+        /* Dots */
+        .dots {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .dot {
+            height: 12px;
+            width: 12px;
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .dot:hover {
+            opacity: 0.8;
+        }
+
+        .active-dot {
+            opacity: 1;
+            background-color: crimson; /* Highlight active dot */
+        }
+
+        @media (max-width:1024px){
+            .slider{height:50vh;} 
+        }
+        @media (max-width:768px){
+            .slider{height:40vh;} 
+            .nav-btn{font-size:24px;padding:8px 16px;}
+            .dots { bottom: 5px; }
+        }
+        @media (max-width:480px){
+            .slider{height:30vh;} 
+            .nav-btn{font-size:20px;padding:6px 12px;}
+            .dot{width:8px;height:8px;}
+        }
+
+        /* --- CATEGORIES STYLES (Tailwind integration) --- */
+        .top-categories-wrapper {
+            background-color: var(--bg-color); 
+            color: var(--text-color);
+        }
+
+        .top-categories {
+            background-color: var(--card-bg-color); 
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+
+        .top-categories h2 {
+            color: var(--text-color); 
+        }
+        
+        /* Custom CSS for the absolute positioned heart icon */
+        .fav-icon {
+            position: absolute;
+            top: 0.5rem; 
+            right: 0.5rem; 
+            font-size: 1.75rem; 
+            color: #ffffff;
+            cursor: pointer;
+            transition: color 0.3s, transform 0.1s;
+            z-index: 10;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5); 
+            line-height: 1; 
+        }
+        .fav-icon:hover {
+            transform: scale(1.1);
+        }
+        .fav-icon.active {
+            color: #ef4444; /* Tailwind red-500 */
+        }
+
+        /* Filter Section Dark Mode Adaptation */
+        .filter-section-tailwind {
+            background-color: var(--card-bg-color);
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+        
+        .filter-section-tailwind label {
+            color: var(--text-color);
+        }
+        
+        .filter-section-tailwind select {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border-color: var(--calendar-border); 
+        }
+
+
+        /* ===== ABOUT SECTION STYLES ===== */
+        .about-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 60px 10%;
+            gap: 40px;
+            background: var(--card-bg-color);
+            margin: 30px auto; 
+            border-radius: 12px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            transition: transform 0.3s ease;
+            max-width: 1100px;
+            flex-wrap: wrap;
+        }
+        .about-section:hover { transform: translateY(-5px); }
+        .about-text { flex: 1; min-width: 280px; }
+        .about-text h2 { color: crimson; font-size: 30px; margin-bottom: 15px; font-weight: bold; }
+        .about-text p { font-size: 16px; line-height: 1.7; color: var(--secondary-text); }
+        .about-img { flex: 1; text-align: center; }
+        .about-img img { width: 100%; max-width: 420px; border-radius: 10px; box-shadow: 0 5px 12px rgba(0,0,0,0.2); }
+        @media (max-width: 900px) {
+            .about-section { flex-direction: column; text-align: center; padding: 40px 20px; }
+            .about-img img { max-width: 300px; }
+        }
+
+        /* ===== About Section Animations (for JS observer) ===== */
+        .about-section {
+            opacity: 0;
+            transition: all 0.8s ease-out;
+        }
+
+        .fade-left {
+            transform: translateX(-80px);
+        }
+
+        .fade-right {
+            transform: translateX(80px);
+        }
+
+        .show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* ===== QUOTE SECTION STYLES (New) ===== */
+        .quote-section {
+            padding: 60px 20px;
+            margin: 0 auto;
+            max-width: 1200px;
+            text-align: center;
+            background-color: var(--bg-color); 
+        }
+
+        .quote-text {
+            font-size: 1.8rem;
+            font-style: italic;
+            font-weight: 500;
+            color: var(--text-color); 
+            line-height: 1.5;
+            margin: 0 auto 10px; 
+            max-width: 800px;
+            opacity: 0; 
+            transition: opacity 1s ease-in-out; 
+        }
+
+        .quote-author {
+            font-size: 1.1rem;
+            font-weight: 600; 
+            color: crimson; 
+            margin-top: 5px; 
+            opacity: 0; 
+            transition: opacity 1s 0.1s ease-in-out; 
+        }
+        /* Smooth fade-out + fade-in animation */
+        .fade {
+            opacity: 1;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .fade.hide {
+            opacity: 0;
+        }
+
+        /* This class makes the elements visible and triggers the fade-in */
+        .quote-text.show,
+        .quote-author.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 600px) {
+            .quote-text {
+                font-size: 1.4rem;
+            }
+        }
+        /* --- END OF QUOTE SECTION STYLES --- */
+
+
+        /* ===== CALENDAR POPUP STYLES (New) ===== */
+        .calendar-popup {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .calendar-box {
+            background: var(--card-bg-color); 
+            color: var(--text-color);
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px; 
+            box-shadow: 0 4px 15px var(--shadow-color); 
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .calendar-header {
+            background: var(--calendar-header);
+            color: white;
+            text-align: center;
+            padding: 12px;
+            font-size: 20px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: var(--calendar-header);
+            color: white;
+            border: none;
+            font-size: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 2px 8px; 
+        }
+
+        .close-btn:hover {
+            background: darkred;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            padding: 10px;
+        }
+
+        .day-name {
+            background: var(--calendar-dayname-bg);
+            padding: 5px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .day {
+            background: var(--calendar-day-bg);
+            border: 1px solid var(--calendar-border);
+            border-radius: 5px;
+            text-align: center;
+            padding: 10px 0; 
+            cursor: default; 
+            transition: 0.3s;
+        }
+
+        .day:hover {
+            background: var(--calendar-dayname-bg); 
+        }
+
+        .day.event {
+            background: crimson;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border-color: crimson; 
+        }
+
+        .day.event:hover {
+            background: #c41e3a; 
+            transform: scale(1.05); 
+        }
+
+        .event-info {
+            padding: 15px;
+            text-align: center;
+            color: var(--text-color);
+            border-top: 1px solid var(--calendar-border);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* ===== CONTACT FORM STYLES (New) ===== */
+        .contact-section {
+            text-align: center;
+            padding: 50px 20px;
+            background-color: var(--card-bg-color);
+            color: var(--text-color);
+            box-shadow: 0 4px 20px var(--shadow-color);
+            margin: 40px auto;
+            max-width: 700px;
+            border-radius: 10px;
+        }
+
+        .contact-section h2 {
+            font-size: 2em;
+            margin-bottom: 25px;
+            color: var(--text-color);
+        }
+
+        #contactForm {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            position: relative;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: var(--text-color);
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px 35px 10px 10px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+            resize: vertical;
+            min-height: 44px;
+        }
+        
+        textarea {
+            min-height: 80px; 
+            max-height: 200px;
+        }
+
+        input:focus, textarea:focus {
+            border-color: crimson;
+            outline: none;
+        }
+
+        .error-message {
+            display: block;
+            color: #e74c3c;
+            font-size: 0.9em;
+            margin-top: 4px;
+            min-height: 18px;
+        }
+        
+        .valid-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%); 
+            color: green;
+            display: none;
+            font-weight: bold;
+        }
+        
+        .form-group:last-of-type .valid-icon {
+            top: 35px; 
+            transform: translateY(0);
+        }
+        
+        input.valid, textarea.valid {
+            border-color: green;
+        }
+
+        input.invalid, textarea.invalid {
+            border-color: #e74c3c;
+        }
+
+        input.valid + .error-message + .valid-icon,
+        textarea.valid + .error-message + .valid-icon {
+            display: inline;
+        }
+
+        #submitBtn {
+            padding: 12px;
+            background-color: crimson;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #submitBtn:disabled {
+            background-color: #888;
+            cursor: not-allowed;
+        }
+
+        #submitBtn:not(:disabled):hover {
+            background-color: #c41e3a;
+        }
+
+        /* --- Footer Styles (Existing) --- */
+        .footer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: var(--navbar-bg);
+            color: white;
+            font-family: Calibri, sans-serif;
+            text-align: center;
+        }
+        
+        .footer p {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .footer-social-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .social-icon {
+            fill: #fff;
+            width: 24px;
+            height: 24px;
+            transition: fill 0.3s ease;
+        }
+        
+        .footer-social-links a:hover .social-icon {
+            fill: #ddd;
+        }
+        
+        /* ===== EVENT DETAILS STYLES (New) ===== */
+        .event-details-section {
+            margin: 50px auto;
+            padding: 20px;
+            max-width: 900px;
+            display: none; /* Initially hidden, controlled by JS */
+        }
+        
+        .event-details-section h2 {
+            color: var(--text-color); 
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-align: center;
+        }
+
+        .back-btn {
+            display: block; 
+            margin: 0 auto 20px; 
+            background-color: crimson; 
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+            max-width: fit-content;
+        }
+
+        .back-btn:hover {
+            background-color: #c41e3a; 
+        }
+
+        .event-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 30px 0;
+            gap: 20px;
+            /* Dark Mode Adaptations */
+            background: var(--card-bg-color); 
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            transition: transform 0.3s ease;
+        }
+
+        .event-card:hover {
+            transform: scale(1.02);
+        }
+
+        .event-card:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+        
+        @media (max-width: 600px) {
+            .event-card { flex-direction: column; }
+            .event-card:nth-child(even) { flex-direction: column; } /* Reset row-reverse on mobile */
+            .event-image, .event-content { width: 100% !important; }
+        }
+
+        .event-image {
+            width: 45%;
+            height: 200px;
+            object-fit: cover;
+        }
+        @media (max-width: 600px) {
+            .event-image { height: 150px; }
+        }
+
+        .event-content {
+            width: 50%;
+            padding: 15px;
+        }
+
+        .event-content h3 {
+            margin-bottom: 10px;
+            color: var(--text-color); /* Dark mode compatible */
+        }
+
+        .event-content p {
+            color: var(--secondary-text); /* Dark mode compatible */
+            font-size: 15px;
+        }
+
+        /* 🆕 Fade Animation */
+        .event-card {
+            opacity: 0;
+            transform: translateY(20px);
+            /* animation property will be applied via JS to handle delay */
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* --- END OF EVENT DETAILS STYLES --- */
+    </style>
+</head>
+<body>
+
+    <!-- Theme Toggle Checkbox must be a direct sibling of the content -->
+    <input type="checkbox" id="theme-toggle">
+
+    <!-- New wrapper to apply styles to all content at once -->
+    <div class="page-wrapper" id="home">
+        <!-- Navbar Section -->
+        <nav class="navbar">
+            <div class="navdiv">
+                <div class="logo">
+                    <img src="images/Logo.jpg" alt="Event Sphere Logo" onerror="this.onerror=null; this.src='https://placehold.co/100x65/E74C3C/ffffff?text=ES+Logo'">
+                </div>
+                <!-- Hidden checkbox for mobile toggle -->
+                <input type="checkbox" id="menu-toggle">
+                <label for="menu-toggle" class="menu-icon">☰</label>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#categories" id="categoriesbtn">Categories</a></li>
+                    <!-- Toggle button for light/dark mode -->
+                    <li>
+                        <label for="theme-toggle" class="mode-btn">Toggle Theme 🌙</label> 
+                    </li>
+                    <li><a href="#cal" id="calendarBtn">Calendar</a></li>
+                    <li><a href="#contact">Contact us</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Image Slider Section (Updated Structure for JS) -->
+        <div class="banner_section">
+            <div class="slider">
+                <div class="slides" id="slides">
+                    <div class="slide"><img src="images/Banner 1.jpg" alt="Slide 1" onerror="this.onerror=null; this.src='https://placehold.co/1200x500/2980B9/ffffff?text=Slide+1'"></div>
+                    <div class="slide"><img src="images/Banner 2.jpg" alt="Slide 2" onerror="this.onerror=null; this.src='https://placehold.co/1200x500/8E44AD/ffffff?text=Slide+2'"></div>
+                    <div class="slide"><img src="images/Banner 3.jpg" alt="Slide 3" onerror="this.onerror=null; this.src='https://placehold.co/1200x500/27AE60/ffffff?text=Slide+3'"></div>
+                    <div class="slide"><img src="images/Banner 4.jpg" alt="Slide 4" onerror="this.onerror=null; this.src='https://placehold.co/1200x500/F39C12/ffffff?text=Slide+4'"></div>
+                </div>
+                <!-- Navigation Buttons -->
+                <button class="nav-btn" id="prevBtn">&#10094;</button>
+                <button class="nav-btn" id="nextBtn">&#10095;</button>
+                <!-- Dots -->
+                <div class="dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quote Section (CORRECTLY PLACED AFTER SLIDER) -->
+        <section class="quote-section">
+            <div id="quote" class="quote-text">Loading...</div>
+            <div id="author" class="quote-author"></div>
+        </section>
+        
+        <!-- About Section 1 -->
+        <section id="about" class="about-section">
+            <div class="about-text">
+                <h2>🎓 About College EventSphere</h2>
+                <p>
+                    College EventSphere is your one-stop platform for all campus events!  
+                    From technical fests and cultural nights to sports tournaments and hackathons,  
+                    we bring every event under one digital roof — easy to browse, filter, and participate in.
+                </p>
+            </div>
+            <div class="about-img">
+                <img src="https://www.chitkara.edu.in/wp-content/uploads/2019/09/RANGREZZ.jpg" alt="College Events" onerror="this.onerror=null; this.src='https://placehold.co/420x280/8A2BE2/ffffff?text=Event+Image'">
+            </div>
+        </section>
+
+        <!-- About Section 2 -->
+        <section class="about-section">
+            <div class="about-text">
+                <h2>🌟 Our Mission</h2>
+                <p>
+                    We aim to enhance student engagement by creating a connected event ecosystem.  
+                    EventSphere empowers clubs and organizers to showcase their creativity while  
+                    ensuring students never miss an opportunity to explore, learn, and connect.
+                </p>
+            </div>
+            <div class="about-img">
+                <img src="https://www.chitkara.edu.in/wp-content/uploads/2022/05/National-Integration-Camp-banner.jpg " alt="Mission Image" onerror="this.onerror=null; this.src='https://placehold.co/420x280/F39C12/ffffff?text=Mission+Image'">
+            </div>
+        </section>
+
+        <!-- About Section 3 -->
+        <section class="about-section">
+            <div class="about-text">
+                <h2>💡 What We Offer</h2>
+                <p>
+                    • Smart event discovery by category and location.  
+                    • Personalized recommendations based on your interests.  
+                    • Option to favorite events and get reminders.  
+                    • AI-powered event assistant for instant help and information.
+                </p>
+            </div>
+            <div class="about-img">
+                <img src="https://www.chitkara.edu.in/wp-content/uploads/2020/06/our-charter.jpg" alt="Technology and Innovation" onerror="this.onerror=null; this.src='https://placehold.co/420x280/16A085/ffffff?text=Features'">
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <div class="top-categories-wrapper p-4 md:p-8 font-sans" id="categories">
+            <main class="max-w-7xl mx-auto">
+                
+                <section class="mb-8 p-4 rounded-xl shadow-lg filter-section-tailwind">
+                    <div class="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+                        <label for="categoryFilter" class="text-lg font-medium">Filter Categories:</label>
+                        <select id="categoryFilter" class="p-3 border rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 text-base">
+                            <option value="all">All</option>
+                            <option value="favorites">⭐ My Favorites</option>
+                            <option value="sports">Sports</option>
+                            <option value="comedy">Comedy</option>
+                            <option value="theatre">Theatre</option>
+                            <option value="movies">Movies</option>
+                            <option value="concerts">Concerts</option>
+                        </select>
+                    </div>
+                </section>
+
+                <section class="top-categories p-6 md:p-10 rounded-xl shadow-2xl">
+                    <h2 class="text-3xl font-extrabold mb-6 flex items-center justify-center">
+                        <span class="mr-2">🎯</span> Top Categories
+                    </h2 >
+
+                    <div id="category-container" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+                        
+                        <div class="category-card relative rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1 group cursor-pointer" data-category="sports">
+                            <img class="w-full h-40 object-cover" src="https://placehold.co/400x300/87CEEB/ffffff?text=Sports" alt="Sports">
+                            <div class="category-label p-3 text-center font-semibold text-white bg-blue-600 group-hover:bg-blue-700 transition duration-300">
+                                ⚽ Sports
+                            </div>
+                            <span class="fav-icon transition duration-300 ease-in-out">♡</span>
+                        </div>
+
+                        <div class="category-card relative rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1 group cursor-pointer" data-category="comedy">
+                            <img class="w-full h-40 object-cover" src="https://placehold.co/400x300/FFA07A/ffffff?text=Comedy" alt="Comedy">
+                            <div class="category-label p-3 text-center font-semibold text-white bg-orange-500 group-hover:bg-orange-600 transition duration-300">
+                                😂 Comedy
+                            </div>
+                            <span class="fav-icon transition duration-300 ease-in-out">♡</span>
+                        </div>
+
+                        <div class="category-card relative rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1 group cursor-pointer" data-category="theatre">
+                            <img class="w-full h-40 object-cover" src="https://placehold.co/400x300/90EE90/ffffff?text=Theatre" alt="Theatre">
+                            <div class="category-label p-3 text-center font-semibold text-white bg-green-500 group-hover:bg-green-600 transition duration-300">
+                                🎭 Theatre
+                            </div>
+                            <span class="fav-icon transition duration-300 ease-in-out">♡</span>
+                        </div>
+
+                        <div class="category-card relative rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1 group cursor-pointer" data-category="movies">
+                            <img class="w-full h-40 object-cover" src="https://placehold.co/400x300/FF69B4/ffffff?text=Movies" alt="Movies">
+                            <div class="category-label p-3 text-center font-semibold text-white bg-pink-500 group-hover:bg-pink-600 transition duration-300">
+                                🎬 Movies
+                            </div>
+                            <span class="fav-icon transition duration-300 ease-in-out">♡</span>
+                        </div>
+
+                        <div class="category-card relative rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1 group cursor-pointer" data-category="concerts">
+                            <img class="w-full h-40 object-cover" src="https://placehold.co/400x300/8A2BE2/ffffff?text=Concerts">
+                            <div class="category-label p-3 text-center font-semibold text-white bg-purple-600 group-hover:bg-purple-700 transition duration-300">
+                                🎵 Concerts
+                            </div>
+                            <span class="fav-icon transition duration-300 ease-in-out">♡</span>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Event Details Section (New: Hidden by default) -->
+        <section id="event-details" class="event-details-section" style="display: none;">
+            <h2>🎟 Events</h2>
+            <button id="back-btn" class="back-btn" style="display: none;">← Back to Categories</button>
+            <div id="events-container">
+                <p style="text-align: center; color: var(--secondary-text);">Select a category above to view events.</p>
+            </div>
+        </section>
+
+
+        <!-- Calendar Popup (New) -->
+        <div class="calendar-popup" id="calendarPopup">
+            <div class="calendar-box">
+                <div class="calendar-header">November 2025
+                    <button class="close-btn" id="closeCal">×</button>
+                </div>
+                <div class="calendar-grid" id="calendarDays"></div>
+                <div class="event-info" id="eventInfo">Click an event date to see details.</div>
+            </div>
+        </div>
+        
+        <!-- Contact Section -->
+        <section class="contact-section" id="contact">
+            <h2>📩 Contact us</h2>
+            <form id="contactForm" novalidate>
+                <div class="form-group">
+                    <label for="name">Full Name:</label>
+                    <input type="text" id="name" name="name" placeholder=" Enter your name">
+                    <span class="error-message"></span>
+                    <span class="valid-icon">✔</span>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address:</label>
+                    <input type="email" id="email" name="email" placeholder=" Enter your email">
+                    <span class="error-message"></span>
+                    <span class="valid-icon">✔</span>
+                </div>
+                <div class="form-group">
+                    <label for="message">Your Message:</label>
+                    <textarea id="message" name="message" placeholder=" Write your message..."></textarea>
+                    <span class="error-message"></span>
+                    <span class="valid-icon">✔</span>
+                </div>
+                <button type="submit" id="submitBtn" disabled>Send Message</button>
+                <p id="successMessage" style="color:green; font-weight:bold; display:none; margin-top:10px;">
+                    ✅ Message sent successfully!
+                </p>
+            </form>
+        </section>
+        
+        <!-- Footer Section -->
+        <footer class="footer">
+            <p>Powered by Chitkara University</p>
+            <div class="footer-social-links">
+                <!-- LinkedIn Icon -->
+                <a href="https://www.linkedin.com/school/chitkara-university/" target="_blank">
+                    <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                        <path d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.8 53.8 0 11107.59 0c0 29.7-24.09 54.3-53.8 54.3zM447.9 448h-92.4V302.4c0-34.7-.7-79.2-48.3-79.2-48.3 0-55.7 37.7-55.7 76.6V448h-92.5V148.9h88.8v40.8h1.3c12.4-23.4 42.5-48.3 87.4-48.3 93.6 0 110.9 61.6 110.9 141.7V448z"/>
+                    </svg>
+                </a>
+                <!-- Instagram Icon -->
+                <a href="https://www.instagram.com/chitkarau/" target="_blank">
+                    <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+                        <path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9S160.5 370.8 224.1 370.8c63.6 0 114.9-51.3 114.9-114.9S287.7 141 224.1 141zm0 188.2c-40.5 0-73.4-32.9-73.4-73.4s32.9-73.4 73.4-73.4 73.4 32.9 73.4 73.4-32.9 73.4-73.4 73.4zm146.4-194.3c0 14.9-12.1 27-27 27s-27-12.1-27-27 12.1-27 27-27 27 12.1 27 27zM398.8 80c-8.4-21.3-24.9-37.8-46.2-46.2C325.3 24 256 24 256 24s-69.3 0-96.6 9.8c-21.3 8.4-37.8 24.9-46.2 46.2C104 107.3 104 176.6 104 176.6s0 69.3 9.8 96.6c8.4 21.3 24.9 37.8 46.2 46.2C186.7 329 256 329 256 329s69.3 0 96.6-9.8c21.3-8.4 37.8-24.9 46.2-46.2 9.8-27.3 9.8-96.6 9.8-96.6s0-69.3-9.8-96.6z"/>
+                    </svg>
+                </a>
+                <!-- X (Twitter) Icon -->
+                <a href="https://twitter.com/ChitkaraU" target="_blank">
+                    <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                        <path d="M459.4 151.7c.3 4.5 .3 9 .3 13.6 0 138.7-105.6 298.9-298.9 298.9-59.5 0-114.9-17.2-161.5-47 8.4 1 16.8 1.6 25.7 1.6 49.1 0 94.2-16.8 130.1-45.5-46-1-84.8-31.1-98.1-72.8a106.3 106.3 0 0047.7-1.6c-48.1-9.7-84.2-52-84.2-102.6v-1.3c14.1 7.8 30.2 12.6 47.4 13.2a104.9 104.9 0 01-46.6-87.5c0-19.5 5.2-37.5 14.1-53a298.6 298.6 0 00216.5 109.8c-15.9-76.1 41.4-137.7 112.5-137.7 33 0 62.8 13.8 83.7 36.3a208 208 0 0065.8-25.2c-6.8 21.3-21.3 39.1-40.4 50.5a211 211 0 0060.5-16.1c-13.2 20.4-30.1 38.4-49.5 52.6z"/>
+                    </svg>
+                </a>
+                <!-- Facebook Icon -->
+                <a href="https://www.facebook.com/ChitkaraU/" target="_blank">
+                    <svg class="social-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512">
+                        <path d="M279.1 288l14.2-92.7h-88.9v-60.1c0-25.4 12.4-50.1 52.2-50.1H296V6.3S273.7 0 252.1 0c-73.5 0-121.6 44.4-121.6 124.7v70.6H64v92.7h66.5V512h100.2V288z"/>
+                    </svg>
+                </a>
+            </div>
+            <p>&copy; 2025 Chitkara University. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        // ===== Image Slider Functionality =====
+        const slidesContainer = document.getElementById('slides');
+        const dots = document.querySelectorAll('.dot');
+        let slides = slidesContainer.children;
+        const totalSlides = slides.length;
+        let slideIndex = 1; 
+        let autoSlideInterval;
+        let isTransitioning = false;
+
+        // Clone the first and last slides for infinite looping
+        const firstClone = slides[0].cloneNode(true);
+        const lastClone = slides[totalSlides - 1].cloneNode(true);
+        slidesContainer.appendChild(firstClone);
+        slidesContainer.insertBefore(lastClone, slides[0]);
+    
+        slides = slidesContainer.children;
+        const slideCount = slides.length; 
+    
+        slidesContainer.style.transform = `translateX(-${slideIndex * 100}%)`;
+
+        function updateDots() {
+            const currentDotIndex = (slideIndex - 1 + totalSlides) % totalSlides;
+            dots.forEach((dot, idx) => {
+                dot.classList.toggle('active-dot', idx === currentDotIndex);
+            });
+        }
+
+        function goToSlide(idx, withTransition = true) {
+            slidesContainer.style.transition = withTransition
+                ? 'transform 1.4s cubic-bezier(0.77, 0, 0.175, 1)'
+                : 'none';
+            slidesContainer.style.transform = `translateX(-${idx * 100}%)`;
+            
+            if (withTransition) {
+                updateDots();
+            }
+        }
+
+        function nextSlide() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+            slideIndex++;
+            goToSlide(slideIndex, true);
+        }
+
+        function prevSlide() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+            slideIndex--;
+            goToSlide(slideIndex, true);
+        }
+        
+        // Dot navigation
+        dots.forEach((dot, idx) => {
+            dot.onclick = () => {
+                slideIndex = idx + 1; 
+                goToSlide(slideIndex, true);
+                restartAutoSlide();
+            };
+        });
+
+        slidesContainer.addEventListener('transitionend', () => {
+            if (slideIndex === slideCount - 1) { 
+                slideIndex = 1;
+                goToSlide(slideIndex, false);
+            }
+            if (slideIndex === 0) { 
+                slideIndex = slideCount - 2; 
+                goToSlide(slideIndex, false);
+            }
+            isTransitioning = false;
+            updateDots(); 
+        });
+
+        // Button navigation
+        document.getElementById('nextBtn').onclick = () => {
+            nextSlide();
+            restartAutoSlide();
+        };
+        document.getElementById('prevBtn').onclick = () => {
+            prevSlide();
+            restartAutoSlide();
+        };
+
+        function autoSlide() {
+            autoSlideInterval = setInterval(() => {
+                nextSlide();
+            }, 3000); // Slide every 3 seconds
+        }
+
+        function restartAutoSlide() {
+            clearInterval(autoSlideInterval);
+            autoSlide();
+        }
+
+        goToSlide(slideIndex, false);
+        updateDots();
+        autoSlide();
+        // ===== End Image Slider Functionality =====
+        
+        // ===== Contact Form Validation =====
+        const nameInput = document.getElementById("name");
+        const emailInput = document.getElementById("email");
+        const messageInput = document.getElementById("message");
+        const submitBtn = document.getElementById("submitBtn");
+        const form = document.getElementById("contactForm");
+        const successMsg = document.getElementById("successMessage");
+
+        function validate() {
+            let valid = true;
+            const fields = [
+                { input: nameInput, minLength: 3, errorMessage: "Name must be at least 3 characters" },
+                { input: emailInput, pattern: /\S+@\S+\.\S+/, errorMessage: "Enter a valid email" },
+                { input: messageInput, minLength: 10, errorMessage: "Message must be at least 10 characters" }
+            ];
+
+            fields.forEach(field => {
+                const { input, minLength, pattern, errorMessage } = field;
+                let isValid = true;
+
+                if (pattern) {
+                    isValid = pattern.test(input.value);
+                } else if (minLength) {
+                    isValid = input.value.trim().length >= minLength;
+                }
+
+                const errorMessageElement = input.nextElementSibling;
+                const validIconElement = errorMessageElement.nextElementSibling;
+
+                if (isValid && input.value.trim() !== "") { 
+                    input.classList.add("valid");
+                    input.classList.remove("invalid");
+                    errorMessageElement.textContent = ""; 
+                    validIconElement.style.display = 'inline';
+                } else if (input.value.trim() !== "") {
+                     input.classList.add("invalid");
+                     input.classList.remove("valid");
+                     errorMessageElement.textContent = errorMessage;
+                     validIconElement.style.display = 'none';
+                     valid = false;
+                } else {
+                    input.classList.remove("valid");
+                    input.classList.remove("invalid");
+                    errorMessageElement.textContent = ""; 
+                    validIconElement.style.display = 'none';
+                    valid = false;
+                }
+            });
+
+            submitBtn.disabled = !valid;
+        }
+
+        [nameInput, emailInput, messageInput].forEach(input => input.addEventListener("input", validate));
+        validate();
+
+        form.addEventListener("submit", e => {
+            e.preventDefault();
+            successMsg.style.display = "block";
+            form.reset();
+            [nameInput, emailInput, messageInput].forEach(i => {
+                i.classList.remove("valid");
+                i.classList.remove("invalid"); 
+                i.nextElementSibling.textContent = ""; 
+            });
+            submitBtn.disabled = true;
+            document.querySelectorAll('.valid-icon').forEach(icon => icon.style.display = 'none');
+            setTimeout(() => { successMsg.style.display = "none"; }, 5000);
+        });
+        // ===== End Contact Form Validation =====
+        
+        // ===== Calendar Popup Functionality =====
+        const popup = document.getElementById("calendarPopup");
+        const btn = document.getElementById("calendarBtn");
+        const closeBtn = document.getElementById("closeCal");
+        const grid = document.getElementById("calendarDays");
+        const info = document.getElementById("eventInfo");
+
+        btn.onclick = e => { e.preventDefault(); popup.style.display = "flex"; };
+        closeBtn.onclick = () => popup.style.display = "none";
+        window.onclick = e => { if (e.target === popup) popup.style.display = "none"; };
+
+        const events = {
+            5: "Tech Fest Opening 🎉", 6: "Sports Meet ⚽", 8: "Comedy Night 😂",
+            11: "Theatre Play 🎭", 15: "Rangrezz Day I 🎬", 16: "Rangrezz Day II 🎬",
+            19: "Art Competition 🎨", 21: "Workshop Day 💡", 29: "Smart India Hackathon 🏆"
+        };
+
+        const daysInMonth = 30; // November has 30 days
+        const startDay = 6;     // November 2025 starts on Saturday (0=Sun ... 6=Sat)
+
+        const names = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+        grid.innerHTML = names.map(d => `<div class="day-name">${d}</div>`).join("");
+
+        for (let i=0; i<startDay; i++) grid.innerHTML += `<div class="day"></div>`;
+        for (let d=1; d<=daysInMonth; d++) {
+            const eventDay = events[d] ? "event" : "";
+            grid.innerHTML += `<div class="day ${eventDay}" data-day="${d}">${d}</div>`;
+        }
+
+        grid.querySelectorAll(".day.event").forEach(day=>{
+            day.onclick = () => {
+                const date = day.dataset.day;
+                info.textContent = `📅 November ${date}: ${events[date]}`;
+            };
+        });
+        // ===== End Calendar Popup Functionality =====
+        
+        // === ABOUT SECTION SCROLL ANIMATION ===
+
+        const aboutSections = document.querySelectorAll(".about-section");
+
+        aboutSections[0].classList.add("fade-left");
+        aboutSections[1].classList.add("fade-right");
+        aboutSections[2].classList.add("fade-left");
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("show");
+                } else {
+                    entry.target.classList.remove("show");
+                }
+            });
+        }, { threshold: 0.2 });
+
+        aboutSections.forEach(section => observer.observe(section));
+
+
+        // ===== Category Filtering and Favoriting Logic =====
+        
+        const favIcons = document.querySelectorAll(".fav-icon");
+        const categoryCards = document.querySelectorAll(".category-card");
+        const categoryFilter = document.getElementById("categoryFilter");
+        
+        let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+        
+        const applyFilter = () => {
+            const selectedCategory = categoryFilter.value;
+            
+            categoryCards.forEach(card => {
+                const cardCategory = card.dataset.category;
+                const isFavorite = favorites.includes(cardCategory);
+                
+                let shouldShow = false;
+
+                if (selectedCategory === 'all') {
+                    shouldShow = true;
+                } else if (selectedCategory === 'favorites') {
+                    shouldShow = isFavorite;
+                } else if (selectedCategory === cardCategory) {
+                    shouldShow = true;
+                }
+
+                card.style.display = shouldShow ? 'block' : 'none'; 
+            });
+        };
+
+        categoryFilter.addEventListener('change', applyFilter);
+
+        const saveFavorites = () => {
+            try {
+                localStorage.setItem("favorites", JSON.stringify(favorites));
+                if (categoryFilter.value === 'favorites') {
+                    applyFilter();
+                }
+            } catch (e) {
+                console.error("Could not save to localStorage:", e);
+            }
+        };
+
+        favIcons.forEach(icon => {
+            const categoryCard = icon.closest(".category-card");
+            if (!categoryCard) return;
+
+            const category = categoryCard.dataset.category;
+
+            if (favorites.includes(category)) {
+                icon.classList.add("active");
+                icon.textContent = "♥️"; 
+            } else {
+                icon.textContent = "♡"; 
+            }
+
+            icon.addEventListener("click", (event) => {
+                event.stopPropagation(); 
+                
+                icon.classList.toggle("active");
+                const isActive = icon.classList.contains("active");
+
+                icon.textContent = isActive ? "♥️" : "♡";
+
+                if (isActive) {
+                    if (!favorites.includes(category)) {
+                        favorites.push(category);
+                    }
+                } else {
+                    favorites = favorites.filter(fav => fav !== category);
+                }
+                
+                saveFavorites();
+            });
+        });
+
+        applyFilter();
+        
+        // ===== Quotes API Logic (Corrected and Functional) =====
+
+        // Quote Elements
+        const quoteTextElement = document.querySelector("#quote");
+        const quoteAuthorElement = document.querySelector("#author");
+
+        // Add fade class
+        quoteTextElement.classList.add("fade");
+        quoteAuthorElement.classList.add("fade");
+
+        async function loadQuote() {
+            try {
+                // Fetching a single random quote
+                const url = "https://motivational-spark-api.vercel.app/api/quotes/random/1";
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                // Get the quote object (API returns an array with 1 item)
+                const quote = data[0] || { quote: "Inspiration is everywhere.", author: "EventSphere" };
+
+                // Smooth Fade-Out (Uses the 1.5s transition defined in CSS for the .fade class)
+                quoteTextElement.classList.add("hide");
+                quoteAuthorElement.classList.add("hide");
+
+                // Timeout delay matches CSS transition (1500ms = 1.5s) for smooth cross-fade
+                setTimeout(() => {
+                    const q = quote.quote;
+                    const a = quote.author;
+
+                    quoteTextElement.textContent = q || "No quote found.";
+                    quoteAuthorElement.textContent = a ? "— " + a : "— Unknown";
+
+                    // Fade-In
+                    quoteTextElement.classList.remove("hide");
+                    quoteAuthorElement.classList.remove("hide");
+
+                }, 1500); 
+
+            } catch (err) {
+                console.error("Error fetching quote:", err);
+                quoteTextElement.textContent = "Failed to load quote.";
+                quoteAuthorElement.textContent = "";
+            }
+        }
+
+        // First quote instantly
+        loadQuote();
+
+        // New quote every 5 seconds (5000ms)
+        setInterval(loadQuote, 5000);
+        
+        
+        // ===== Event Details Logic (New) =====
+        
+        const eventData = {
+            sports: [
+                { img: "https://placehold.co/400x250/87CEEB/ffffff?text=Football+Tournament", title: "Intercollege Football Tournament", desc: "Join the thrilling battle of goals and glory! Teams from across the region will compete for the grand trophy." },
+                { img: "https://placehold.co/400x250/6495ED/ffffff?text=Basketball+League", title: "Annual Basketball League", desc: "Experience fast-paced action and skill as college teams face off in this high-energy basketball league." },
+                { img: "https://placehold.co/400x250/00BFFF/ffffff?text=Cricket+Match", title: "Cricket Carnival", desc: "The most awaited cricket match of the year — where sixes, cheers, and rivalry fill the air." },
+                { img: "https://placehold.co/400x250/1E90FF/ffffff?text=Athletics+Meet", title: "Annual Athletics Meet", desc: "Show your strength, stamina, and speed across multiple track and field events." },
+                { img: "https://placehold.co/400x250/4682B4/ffffff?text=Table+Tennis", title: "Table Tennis Showdown", desc: "A fast-paced table tennis tournament to test your reflexes and focus." },
+            ],
+
+            comedy: [
+                { img: "https://placehold.co/400x250/FFA07A/ffffff?text=Stand-Up+Night", title: "Campus Stand-Up Night", desc: "Laugh out loud as budding comedians take the stage with hilarious sets." },
+                { img: "https://placehold.co/400x250/FF7F50/ffffff?text=Mimicry+Show", title: "Mimicry Madness", desc: "Impersonations, jokes, and laughter guaranteed — can you guess who’s who?" },
+                { img: "https://placehold.co/400x250/FF6347/ffffff?text=Funny+Skit", title: "Funny Skit Competition", desc: "Teams perform short comic plays that’ll have you in splits." },
+                { img: "https://placehold.co/400x250/FF4500/ffffff?text=Comedy+Battle", title: "Comedy Battle", desc: "The ultimate face-off between the funniest minds on campus." },
+                { img: "https://placehold.co/400x250/DC143C/ffffff?text=Improv+Night", title: "Improv Night", desc: "Unscripted humor at its best — watch comedians create scenes on the spot." },
+            ],
+
+            theatre: [
+                { img: "https://placehold.co/400x250/90EE90/ffffff?text=Stage+Play", title: "Classic Stage Drama", desc: "Experience a powerful theatrical performance that blends art and storytelling." },
+                { img: "https://placehold.co/400x250/3CB371/ffffff?text=Mono+Act", title: "Mono Act Challenge", desc: "Watch performers captivate the audience with solo acting brilliance." },
+                { img: "https://placehold.co/400x250/2E8B57/ffffff?text=Street+Play", title: "Nukkad Natak", desc: "An open-air street performance spreading social awareness through theatre." },
+                { img: "https://placehold.co/400x250/228B22/ffffff?text=Drama+Festival", title: "Intercollege Drama Fest", desc: "Teams compete with thought-provoking dramas and stage plays." },
+                { img: "https://placehold.co/400x250/006400/ffffff?text=Mime+Act", title: "Mime Magic", desc: "A silent performance that speaks volumes through expressions and gestures." },
+            ],
+
+            movies: [
+                { img: "https://placehold.co/400x250/FF69B4/ffffff?text=Movie+Night", title: "Open-Air Movie Night", desc: "Enjoy a blockbuster under the stars with popcorn and friends." },
+                { img: "https://placehold.co/400x250/FF1493/ffffff?text=Short+Film", title: "Short Film Showcase", desc: "Watch creative short films by talented student filmmakers." },
+                { img: "https://placehold.co/400x250/DB7093/ffffff?text=Film+Quiz", title: "Film Trivia Night", desc: "Test your cinema knowledge in a fun quiz about classics and blockbusters." },
+                { img: "https://placehold.co/400x250/C71585/ffffff?text=Director's+Talk", title: "Director’s Talk", desc: "Meet local filmmakers and learn the craft behind the camera." },
+                { img: "https://placehold.co/400x250/FFB6C1/ffffff?text=Animation+Fest", title: "Animation Fest", desc: "Explore student-made animations and visual storytelling art." },
+            ],
+
+            concerts: [
+                { img: "https://placehold.co/400x250/8A2BE2/ffffff?text=Rock+Concert", title: "Rock Night", desc: "Feel the energy as live bands set the stage on fire!" },
+                { img: "https://placehold.co/400x250/9370DB/ffffff?text=EDM+Party", title: "EDM Party", desc: "Dance to electrifying beats with DJ sets lighting up the night." },
+                { img: "https://placehold.co/400x250/BA55D3/ffffff?text=Acoustic+Evening", title: "Acoustic Evening", desc: "Relax and unwind with soulful acoustic tunes." },
+                { img: "https://placehold.co/400x250/9932CC/ffffff?text=Battle+of+Bands", title: "Battle of the Bands", desc: "Student bands compete for the title of campus rockstar." },
+                { img: "https://placehold.co/400x250/9400D3/ffffff?text=Fusion+Night", title: "Fusion Night", desc: "A blend of classical and modern music — one mesmerizing evening!" },
+            ]
+        };
+        
+        const eventsContainer = document.getElementById("events-container");
+        const eventDetailsSection = document.getElementById("event-details");
+        const backBtn = document.getElementById("back-btn");
+        const topCategories = document.getElementById("categories"); 
+        
+        
+        function displayEvents(events) {
+            // 1. Render event cards with image fallbacks
+            eventsContainer.innerHTML = events
+                .map((event, index) => `
+                    <div class="event-card ${index % 2 === 0 ? 'left' : 'right'}">
+                        <img src="${event.img}" alt="${event.title}" class="event-image" onerror="this.onerror=null; this.src='https://placehold.co/400x250/333/ffffff?text=Event+Image'"/>
+                        <div class="event-content">
+                            <h3>${event.title}</h3>
+                            <p>${event.desc}</p>
+                        </div>
+                    </div>
+                `)
+                .join("");
+
+            // 2. Apply animation with delay to newly created cards
+            const cards = eventsContainer.querySelectorAll(".event-card");
+            cards.forEach((card, index) => {
+                // Apply the animation and delay for the fadeInUp effect
+                card.style.animation = `fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) ${index * 0.1}s forwards`;
+            });
+
+            // 3. Show event section & back button
+            eventDetailsSection.style.display = "block";
+            backBtn.style.display = "inline-block";
+
+            // 4. Smooth scroll to event section
+            eventDetailsSection.scrollIntoView({ behavior: "smooth" });
+        }
+
+
+        // Listeners for Category Clicks (Trigger event display)
+        categoryCards.forEach(card => {
+            card.addEventListener("click", (event) => {
+                const category = card.dataset.category;
+                const events = eventData[category] || [];
+                displayEvents(events);
+            });
+        });
+
+        // Listener for Back Button
+        backBtn.addEventListener("click", () => {
+            // Hide the details section and the back button
+            eventDetailsSection.style.display = "none";
+            backBtn.style.display = "none";
+            
+            // Smooth scroll back to the categories section
+            topCategories.scrollIntoView({ behavior: "smooth" });
+        });
+        
+    </script>
+
+</body>
+</html>

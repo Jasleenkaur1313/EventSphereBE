@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EventSphere — Admin Portal</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f9fafc; --surface: #fff; --card: #fff; --border: #e5e7eb;
+      --accent: #dc143c; --accent2: #b3002e; --green: #059669;
+      --text: #222; --muted: #6b7280; --radius: 10px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; min-height: 100vh; }
+
+    header {
+      background: var(--accent); padding: 0 2rem; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { font-weight: 800; font-size: 1.25rem; color: #fff; }
+    .badge { background: rgba(255,255,255,0.2); color: #fff; font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
+    #login-area { display: flex; align-items: center; gap: 10px; }
+    #token-input { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; width: 180px; }
+    #token-input::placeholder { color: rgba(255,255,255,0.6); }
+    #token-input:focus { outline: none; border-color: #fff; }
+
+    .btn { font-family: Arial, sans-serif; font-weight: 600; font-size: 0.85rem; padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer; transition: all 0.15s; }
+    .btn-white { background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4); }
+    .btn-white:hover { background: rgba(255,255,255,0.3); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
+    .btn-danger:hover { background: #ef4444; color: #fff; }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-green:hover { background: #047857; }
+    .btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+
+    .layout { display: grid; grid-template-columns: 200px 1fr; min-height: calc(100vh - 64px); }
+    aside { background: var(--surface); border-right: 1px solid var(--border); padding: 1.25rem 0.75rem; display: flex; flex-direction: column; gap: 4px; }
+    .side-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); padding: 8px 10px 4px; font-weight: 700; }
+    .side-btn { background: none; border: none; color: var(--muted); font-size: 0.875rem; padding: 9px 12px; border-radius: 6px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px; transition: all 0.12s; font-family: Arial, sans-serif; }
+    .side-btn:hover { background: #fef2f2; color: var(--text); }
+    .side-btn.active { background: var(--accent); color: #fff; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    main { padding: 1.5rem 2rem; overflow-y: auto; }
+    .page-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; }
+x
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    .stat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+    .stat-val { font-size: 1.8rem; font-weight: 800; }
+
+    .tbl-wrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead { background: #fafafa; }
+    th { padding: 10px 14px; text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 700; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 14px; border-top: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: #fef2f2; }
+    .pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; text-transform: capitalize; }
+    .c-sports { background: #dbeafe; color: #1d4ed8; } .c-comedy { background: #ffedd5; color: #c2410c; }
+    .c-concerts { background: #f3e8ff; color: #7e22ce; } .c-theatre { background: #dcfce7; color: #15803d; }
+    .c-movies { background: #fce7f3; color: #be185d; }
+    .actions { display: flex; gap: 5px; }
+
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 200; align-items: center; justify-content: center; }
+    .modal-bg.open { display: flex; }
+    .modal { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.75rem; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+    .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--accent); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .grid2 .full { grid-column: 1 / -1; }
+    label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    input, select, textarea { width: 100%; background: #fff; border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: Arial, sans-serif; font-size: 0.875rem; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(220,20,60,0.12); }
+    textarea { resize: vertical; min-height: 70px; }
+    .modal-foot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+
+    #toast { position: fixed; bottom: 20px; right: 20px; background: var(--green); color: #fff; font-weight: 600; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; z-index: 300; transform: translateY(70px); opacity: 0; transition: all 0.3s; }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.error { background: #ef4444; }
+
+    #auth-notice { text-align: center; padding: 3rem 2rem; color: var(--muted); }
+    #auth-notice h2 { font-size: 1.3rem; color: var(--text); margin-bottom: 0.4rem; }
+    .empty { text-align: center; padding: 2.5rem; color: var(--muted); font-size: 0.9rem; }
+
+    .side-info { padding: 10px; font-size: 0.72rem; color: var(--muted); line-height: 1.6; margin-top: auto; }
+    .side-info strong { color: var(--text); }
+    .side-info code { font-size: 0.72rem; }
+
+    @media (max-width: 768px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { flex-direction: row; overflow-x: auto; padding: 0.5rem; gap: 3px; border-right: none; border-bottom: 1px solid var(--border); }
+      .side-label, .side-info { display: none; }
+      .side-btn { white-space: nowrap; font-size: 0.78rem; padding: 7px 9px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      main { padding: 1rem; }
+      .grid2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="logo">EventSphere</div>
+    <div class="badge">Admin</div>
+  </div>
+  <div id="login-area">
+    <input type="password" id="token-input" placeholder="Enter admin token" />
+    <button class="btn btn-white" onclick="setToken()">Connect</button>
+    <button class="btn btn-white" onclick="clearToken()" id="logout-btn" style="display:none">Logout</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="side-label">Categories</div>
+    <button class="side-btn active" onclick="filterCat('all', this)"><span class="dot" style="background:var(--accent)"></span> All Events</button>
+    <button class="side-btn" onclick="filterCat('sports', this)"><span class="dot" style="background:#1d4ed8"></span> Sports</button>
+    <button class="side-btn" onclick="filterCat('comedy', this)"><span class="dot" style="background:#c2410c"></span> Comedy</button>
+    <button class="side-btn" onclick="filterCat('concerts', this)"><span class="dot" style="background:#7e22ce"></span> Concerts</button>
+    <button class="side-btn" onclick="filterCat('theatre', this)"><span class="dot" style="background:#15803d"></span> Theatre</button>
+    <button class="side-btn" onclick="filterCat('movies', this)"><span class="dot" style="background:#be185d"></span> Movies</button>
+    <div class="side-info">
+      <strong>API</strong><br><code style="color:var(--accent)">localhost:9001</code><br><br>
+      Token:<br><code style="color:var(--green)">admin123</code>
+    </div>
+  </aside>
+
+  <main>
+    <div id="auth-notice">
+      <h2>Admin Login Required</h2>
+      <p>Enter your admin token in the top-right to access the dashboard.</p>
+      <p style="margin-top:6px;font-size:0.82rem">Default token: <code style="color:var(--accent)">admin123</code></p>
+    </div>
+
+    <div id="dashboard" style="display:none">
+      <div class="stats" id="stats">
+        <div class="stat"><div class="stat-label">Total Events</div><div class="stat-val" style="color:var(--accent)" id="s-total">—</div></div>
+        <div class="stat"><div class="stat-label">Sports</div><div class="stat-val" style="color:#1d4ed8" id="s-sports">—</div></div>
+        <div class="stat"><div class="stat-label">Concerts</div><div class="stat-val" style="color:#7e22ce" id="s-concerts">—</div></div>
+        <div class="stat"><div class="stat-label">Others</div><div class="stat-val" style="color:#c2410c" id="s-others">—</div></div>
+      </div>
+
+      <div class="page-title">
+        <span id="title-text">All Events</span>
+        <button class="btn btn-green" onclick="openAdd()">+ Add Event</button>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Event Title</th><th>Category</th><th>Date</th><th>Venue</th><th>Price</th><th>Actions</th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Add New Event</h3>
+    <div class="grid2">
+      <div class="full"><label>Title *</label><input id="f-title" placeholder="e.g. Rock Night 2026"/></div>
+      <div><label>Category *</label>
+        <select id="f-cat"><option value="">Select</option><option value="sports">Sports</option><option value="comedy">Comedy</option><option value="concerts">Concerts</option><option value="theatre">Theatre</option><option value="movies">Movies</option></select>
+      </div>
+      <div><label>Date *</label><input type="date" id="f-date"/></div>
+      <div><label>Time</label><input id="f-time" placeholder="e.g. 7:00 PM"/></div>
+      <div><label>Venue</label><input id="f-venue" placeholder="e.g. Auditorium"/></div>
+      <div class="full"><label>Image URL</label><input id="f-img" placeholder="https://..."/></div>
+      <div><label>Price (Rs) — blank = free</label><input type="number" min="0" id="f-price" placeholder="e.g. 150"/></div>
+      <div class="full"><label>Description *</label><textarea id="f-desc" placeholder="Describe the event..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" style="background:#f3f4f6;color:var(--muted)" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEvent()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'http://localhost:9001';
+let token = '', editId = null, filter = 'all', allEvents = [];
+
+function setToken() {
+  const v = document.getElementById('token-input').value.trim();
+  if (!v) return toast('Enter a token first!', true);
+  token = v;
+  document.getElementById('logout-btn').style.display = 'inline-flex';
+  document.getElementById('auth-notice').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  load();
+  toast('Connected! Loading events...');
+}
+
+function clearToken() {
+  token = '';
+  document.getElementById('token-input').value = '';
+  document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('auth-notice').style.display = 'block';
+  document.getElementById('dashboard').style.display = 'none';
+}
+
+async function load() {
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = '<tr><td colspan="7" class="empty">Loading...</td></tr>';
+  try {
+    const res = await fetch(`${API}/api/events`);
+    const json = await res.json();
+    allEvents = json.data || [];
+    updateStats();
+    render(allEvents);
+  } catch {
+    tb.innerHTML = '<tr><td colspan="7" class="empty" style="color:#ef4444">Cannot connect to backend.<br><small>Make sure server.js is running on port 9001</small></td></tr>';
+  }
+}
+
+function updateStats() {
+  document.getElementById('s-total').textContent = allEvents.length;
+  document.getElementById('s-sports').textContent = allEvents.filter(e => e.category === 'sports').length;
+  document.getElementById('s-concerts').textContent = allEvents.filter(e => e.category === 'concerts').length;
+  document.getElementById('s-others').textContent = allEvents.filter(e => !['sports','concerts'].includes(e.category)).length;
+}
+
+function render(events) {
+  const tb = document.getElementById('tbody');
+  if (!events.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">No events found.</td></tr>'; return; }
+  tb.innerHTML = events.map((ev, i) => `
+    <tr>
+      <td style="color:var(--muted);font-size:0.78rem">${i+1}</td>
+      <td>
+        <div style="font-weight:600">${ev.title}</div>
+        <div style="font-size:0.73rem;color:var(--muted);margin-top:2px">${(ev.description||'').slice(0,55)}...</div>
+      </td>
+      <td><span class="pill c-${ev.category}">${ev.category}</span></td>
+      <td style="color:var(--muted)">${ev.date || '—'}</td>
+      <td style="color:var(--muted);font-size:0.82rem">${ev.venue || '—'}</td>
+      <td>${ev.price ? '<span style="color:#059669;font-weight:600">Rs '+ev.price+'</span>' : '<span style="color:var(--muted)">Free</span>'}</td>
+      <td><div class="actions">
+        <button class="btn btn-sm btn-primary" onclick="openEdit('${ev.id}')">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="del('${ev.id}','${ev.title.replace(/'/g,"\`")}')">Delete</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+function filterCat(cat, btn) {
+  filter = cat;
+  document.getElementById('title-text').textContent = cat === 'all' ? 'All Events' : cat.charAt(0).toUpperCase() + cat.slice(1) + ' Events';
+  document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render(cat === 'all' ? allEvents : allEvents.filter(e => e.category === cat));
+}
+
+function openAdd() {
+  editId = null;
+  document.getElementById('modal-title').textContent = 'Add New Event';
+  ['f-title','f-cat','f-date','f-time','f-venue','f-img','f-price','f-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('modal').classList.add('open');
+}
+
+function openEdit(id) {
+  const ev = allEvents.find(e => e.id === id);
+  if (!ev) return;
+  editId = id;
+  document.getElementById('modal-title').textContent = 'Edit Event';
+  document.getElementById('f-title').value = ev.title || '';
+  document.getElementById('f-cat').value = ev.category || '';
+  document.getElementById('f-date').value = ev.date || '';
+  document.getElementById('f-time').value = ev.time || '';
+  document.getElementById('f-venue').value = ev.venue || '';
+  document.getElementById('f-img').value = ev.image || '';
+  document.getElementById('f-price').value = ev.price || '';
+  document.getElementById('f-desc').value = ev.description || '';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+async function saveEvent() {
+  const body = {
+    title: document.getElementById('f-title').value.trim(),
+    category: document.getElementById('f-cat').value,
+    date: document.getElementById('f-date').value,
+    time: document.getElementById('f-time').value.trim(),
+    venue: document.getElementById('f-venue').value.trim(),
+    image: document.getElementById('f-img').value.trim(),
+    description: document.getElementById('f-desc').value.trim(),
+  };
+  const price = document.getElementById('f-price').value.trim();
+  if (price && !isNaN(price)) body.price = Number(price);
+
+  if (!body.title || !body.category || !body.description || !body.date) return toast('Fill in Title, Category, Date and Description!', true);
+
+  try {
+    const url = editId ? `${API}/api/admin/events/${editId}` : `${API}/api/admin/events`;
+    const res = await fetch(url, {
+      method: editId ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(body)
+    });
+    const json = await res.json();
+    if (!res.ok) return toast(json.message || 'Error!', true);
+    closeModal();
+    toast(editId ? 'Event updated!' : 'Event added!');
+    load();
+  } catch { toast('Server error.', true); }
+}
+
+async function del(id, title) {
+  if (!confirm(`Delete "${title}"?`)) return;
+  try {
+    const res = await fetch(`${API}/api/admin/events/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+    const json = await res.json();
+    if (!res.ok) return toast(json.message || 'Error!', true);
+    toast('Event deleted!');
+    load();
+  } catch { toast('Server error.', true); }
+}
+
+function toast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (err ? ' error' : '');
+  setTimeout(() => { t.className = ''; }, 3000);
+}
+
+document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') setToken(); });
+</script>
+</body>
+</html>
