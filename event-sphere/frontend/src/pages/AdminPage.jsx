@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import socket from '../socket';
 
-const API = 'http://localhost:9001';
+const API = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9001';
 
 const STYLES = `
   .admin-wrap *, .admin-wrap *::before, .admin-wrap *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -126,7 +127,7 @@ const STYLES = `
     color: var(--text);
   }
 
-  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2rem; }
 
   .stat-card {
     background: var(--card);
@@ -274,7 +275,7 @@ const STYLES = `
     .admin-sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 0.75rem; gap: 4px; border-right: none; border-bottom: 1px solid var(--border); }
     .sidebar-label { display: none; }
     .sidebar-btn { white-space: nowrap; font-size: 0.8rem; padding: 8px 10px; }
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
     .admin-main { padding: 1rem; }
     .form-row { grid-template-columns: 1fr; }
   }
@@ -286,16 +287,35 @@ export default function AdminPage({ onNavigate, onLogout }) {
   const [currentFilter, setCurrentFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [serverOnline, setServerOnline] = useState(false);
-  const [token, setToken] = useState('admin123');
+  const [token] = useState(() => localStorage.getItem('eventSphereAuthToken') || '');
   const [toast, setToast] = useState({ msg: '', type: '' });
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ title: '', category: '', date: '', time: '', venue: '', image: '', description: '', price: '' });
+  const [onlineUsers, setOnlineUsers] = useState(0);
 
   const CATEGORIES = ['sports', 'comedy', 'theatre', 'movies', 'concerts'];
 
   useEffect(() => {
     loadEvents();
+  }, []);
+
+  // Live socket updates
+  useEffect(() => {
+    const handleUsersCount = (count) => setOnlineUsers(count);
+    const handleEventChange = () => loadEvents();
+
+    socket.on('users:count', handleUsersCount);
+    socket.on('event:created', handleEventChange);
+    socket.on('event:updated', handleEventChange);
+    socket.on('event:deleted', handleEventChange);
+
+    return () => {
+      socket.off('users:count', handleUsersCount);
+      socket.off('event:created', handleEventChange);
+      socket.off('event:updated', handleEventChange);
+      socket.off('event:deleted', handleEventChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -452,6 +472,13 @@ export default function AdminPage({ onNavigate, onLogout }) {
               <div className="stat-card"><div className="stat-label">Sports</div><div className="stat-value" style={{ color: '#1d4ed8' }}>{stats.sports}</div></div>
               <div className="stat-card"><div className="stat-label">Concerts</div><div className="stat-value" style={{ color: '#a16207' }}>{stats.concerts}</div></div>
               <div className="stat-card"><div className="stat-label">Others</div><div className="stat-value" style={{ color: '#7e22ce' }}>{stats.others}</div></div>
+              <div className="stat-card">
+                <div className="stat-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: onlineUsers > 0 ? '#059669' : '#9ca3af', display: 'inline-block' }} />
+                  Online Now
+                </div>
+                <div className="stat-value" style={{ color: '#059669' }}>{onlineUsers}</div>
+              </div>
             </div>
 
             {/* Table */}
@@ -478,7 +505,7 @@ export default function AdminPage({ onNavigate, onLogout }) {
                   </thead>
                   <tbody>
                     {filtered.length === 0 ? (
-                      <tr className="empty-row"><td colSpan="6">No events found.{!serverOnline && ' (Backend server not running)'}</td></tr>
+                      <tr className="empty-row"><td colSpan="7">No events found.{!serverOnline && ' (Backend server not running)'}</td></tr>
                     ) : filtered.map((ev, i) => (
                       <tr key={ev.id}>
                         <td style={{ color: 'var(--muted)', fontSize: '0.8rem' }}>{i + 1}</td>

@@ -107,7 +107,7 @@ export default function CategoriesSection({ onCategoryClick }) {
                         <span className="mr-2">🎯</span> Top Categories
                     </h2 >
 
-                    <div id="category-container">
+                    <div id="category-container" className="categories-container">
                         {filteredCategories.map(cat => (
                             <CategoryCard
                                 key={cat.key}

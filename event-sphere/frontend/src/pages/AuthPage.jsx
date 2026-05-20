@@ -3,8 +3,7 @@ import TermsModal from '../components/TermsModal';
 import '../styles/auth.css';
 
 // Firebase imports
-import { auth } from "../firebase";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+
 function PasswordFeedback({ password }) {
     if (password.length === 0) return null;
 
@@ -149,44 +148,38 @@ export default function AuthPage({ onNavigate, onLoginSuccess }) {
     return;
   }
 
+
   try {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:9001'}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: loginForm.username,
+        password: loginForm.password
+      })
+    });
 
-const userCredential = await signInWithEmailAndPassword(
-  auth,
-  loginForm.username,
-  loginForm.password
-);
+    const data = await res.json();
 
-const user = userCredential.user;
+    if (data.token) {
+      localStorage.setItem("eventSphereAuthToken", data.token);
 
-// Determine admin status from the email used to log in
-const adminFlag = loginForm.username.toLowerCase().startsWith('admin');
+      const adminFlag = data.user.email.startsWith("admin");
+      localStorage.setItem("eventSphereIsAdmin", String(adminFlag));
 
-// send login to backend so it saves to login_logs.json
-try {
-  await fetch("http://localhost:9001/api/auth/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      username: loginForm.username,
-      password: loginForm.password
-    })
-  });
-} catch (backendErr) {
-  // Backend logging is optional — don't block login
-  console.warn("Backend login log failed:", backendErr);
-}
+      onLoginSuccess(adminFlag);
+    } else {
+      setErrors({ usernameError: data.message });
+    }
 
-localStorage.setItem("eventSphereAuthToken", user.uid);
-localStorage.setItem("eventSphereIsAdmin", String(adminFlag));
-
-onLoginSuccess(adminFlag);
   } catch (error) {
-    setErrors({ usernameError: "Invalid email or password." });
+    console.error(error);
+    setErrors({ usernameError: "Login failed" });
   }
 };
+
 const handleRegisterSubmit = async (e) => {
   e.preventDefault();
   clearErrors();
@@ -194,37 +187,42 @@ const handleRegisterSubmit = async (e) => {
   if (validateRegistrationForm()) {
     try {
 
-      await createUserWithEmailAndPassword(
-        auth,
-        registerForm.email,
-        registerForm.password
-      );
+const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:9001'}/api/auth/register`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    name: registerForm.name,
+    studentId: registerForm.studentId,
+    email: registerForm.email,
+    password: registerForm.password,
+    major: registerForm.major
+  })
+});
 
-      setIsLoginView(true);
+const data = await res.json();
 
-      setRegisterForm({
-        name: '',
-        studentId: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        major: '',
-        terms: false
-      });
+if (data.success) {
+  setIsLoginView(true);
+  setErrors({ loginSuccess: "Registration successful! Please sign in." });
+  setRegisterForm({
+    name: '',
+    studentId: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    major: '',
+    terms: false
+  });
+} else {
+  setErrors({ emailError: data.message });
+}
 
-      setErrors({ loginSuccess: "Registration successful! Please sign in below." });
 
     } catch (error) {
-
-      if (error.code === "auth/email-already-in-use") {
-        setErrors({ emailError: "This email is already registered." });
-      }
-      else if (error.code === "auth/weak-password") {
-        setErrors({ regPasswordError: "Password should be at least 6 characters." });
-      }
-      else {
-        setErrors({ nameError: error.message });
-      }
+        console.error(error);
+        setErrors({ emailError: "Registration failed" });
 
     }
   }

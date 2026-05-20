@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import socket from '../socket';
 import Navbar from '../components/Navbar';
 import Slider from '../components/Slider';
 import QuoteSection from '../components/QuoteSection';
@@ -53,10 +54,11 @@ export default function HomePage({ onNavigate, onToggleTheme, onLogout, isAdmin 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [backendEvents, setBackendEvents] = useState({});
+  const [categoryViewers, setCategoryViewers] = useState(0);
 
-  const fetchEventsForCategory = async (category) => {
+  const fetchEventsForCategory = useCallback(async (category) => {
     try {
-      const res = await fetch(`http://localhost:9001/api/events?category=${category}`);
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:9001'}/api/events?category=${category}`);
       const json = await res.json();
       if (json.success && json.data.length > 0) {
         const mapped = json.data.map(e => ({
@@ -71,7 +73,52 @@ export default function HomePage({ onNavigate, onToggleTheme, onLogout, isAdmin 
     } catch (err) {
       // Backend not running — silently fall back to mock data
     }
-  };
+  }, []);
+
+  // Rejoin category room and refresh events when socket broadcasts a change
+  useEffect(() => {
+    const handleCreated = ({ event }) => {
+      if (selectedCategory && event.category === selectedCategory) {
+        fetchEventsForCategory(selectedCategory);
+      }
+    };
+    const handleUpdated = ({ event }) => {
+      if (selectedCategory && event.category === selectedCategory) {
+        fetchEventsForCategory(selectedCategory);
+      }
+    };
+    const handleDeleted = ({ category }) => {
+      if (selectedCategory && category === selectedCategory) {
+        fetchEventsForCategory(selectedCategory);
+      }
+    };
+    const handleViewers = ({ category, count }) => {
+      if (category === selectedCategory) setCategoryViewers(count);
+    };
+
+    socket.on('event:created', handleCreated);
+    socket.on('event:updated', handleUpdated);
+    socket.on('event:deleted', handleDeleted);
+    socket.on('category:viewers', handleViewers);
+
+    return () => {
+      socket.off('event:created', handleCreated);
+      socket.off('event:updated', handleUpdated);
+      socket.off('event:deleted', handleDeleted);
+      socket.off('category:viewers', handleViewers);
+    };
+  }, [selectedCategory, fetchEventsForCategory]);
+
+  // Join/leave category rooms on the socket
+  useEffect(() => {
+    if (selectedCategory) {
+      socket.emit('category:join', selectedCategory);
+      setCategoryViewers(0);
+    }
+    return () => {
+      if (selectedCategory) socket.emit('category:leave', selectedCategory);
+    };
+  }, [selectedCategory]);
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(category);
@@ -139,11 +186,12 @@ export default function HomePage({ onNavigate, onToggleTheme, onLogout, isAdmin 
       <CategoriesSection onCategoryClick={handleCategoryClick} />
       
       {/* Event Details is conditionally shown */}
-      <EventDetails 
+      <EventDetails
           show={showEvents}
           events={eventsToDisplay}
           onBack={handleBackToCategories}
           categoryName={selectedCategory}
+          viewerCount={categoryViewers}
       />
 
       <ContactForm />

@@ -1,16 +1,13 @@
-
-//mongodb
 const express = require('express');
 const router = express.Router();
-const Contact = require('../models/Contact');
+const prisma = require('../lib/prisma');
 
 
-// ✅ POST /api/contact — Save contact message
+// POST /api/contact — save contact message
 router.post('/', async (req, res, next) => {
   try {
     const { name, email, message } = req.body;
 
-    // validation
     if (!name || !email || !message) {
       return res.status(400).json({
         success: false,
@@ -20,36 +17,30 @@ router.post('/', async (req, res, next) => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid email format.'
-      });
+      return res.status(400).json({ success: false, message: 'Invalid email format.' });
     }
 
-    const newContact = new Contact({
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      message: message.trim()
+    const newContact = await prisma.contact.create({
+      data: {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        message: message.trim()
+      }
     });
 
-    await newContact.save();
-
-    res.status(201).json({
-      success: true,
-      message: 'Message sent successfully!',
-      contact: newContact
-    });
-
+    res.status(201).json({ success: true, message: 'Message sent successfully!', contact: newContact });
   } catch (err) {
     next(err);
   }
 });
 
 
-// ✅ GET /api/contact — fetch all contacts
+// GET /api/contact — fetch all contacts
 router.get('/', async (req, res, next) => {
   try {
-    const contacts = await Contact.find().sort({ submittedAt: -1 });
+    const contacts = await prisma.contact.findMany({
+      orderBy: { submittedAt: 'desc' }
+    });
     res.json({ success: true, data: contacts });
   } catch (err) {
     next(err);

@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Custom variables and styles from original HOMEPAGE HTML */
 html {
@@ -152,20 +150,20 @@ li a, .mode-btn { color: white; font-size: 18px; font-weight: bold; cursor: poin
     background: rgba(0, 0, 0, 0.5);
 }
 .fav-icon.active { color: #ef4444; }
-.filter-section-tailwind { 
-    background-color: var(--card-bg-color); 
-    box-shadow: 0 4px 15px var(--shadow-color); 
+.filter-section-tailwind {
+    background-color: var(--card-bg-color);
+    box-shadow: 0 4px 15px var(--shadow-color);
     max-width: 75%;
     margin-left: auto;
     margin-right: auto;
     margin-bottom: 3rem;
     display: flex;
-    justify-content: space-around;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
 }
 .filter-section-tailwind h2 {
-    margin-bottom: 0;
+    margin-bottom: 1rem;
 }
 .filter-section-tailwind label { color: var(--text-color); }
 .filter-section-tailwind select { 

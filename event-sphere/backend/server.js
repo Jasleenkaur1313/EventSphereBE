@@ -1,145 +1,124 @@
-// server.js — run with: node server.js or npm run dev
+require('dotenv').config();
 
 const express = require('express');
-const fs = require('fs');
+const http = require('http');
+const { initSocket } = require('./socket');
 const path = require('path');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
-//MONGODB PART
 const connectDB = require('./config/db');
+const prisma = require('./lib/prisma');
+
 connectDB();
 
 const adminAuth = require('./middleware/adminAuth');
-const eventsRouter  = require('./routes/events');
-const contactRouter = require('./routes/contact');  
-
+const eventsRouter = require('./routes/events');
+const contactRouter = require('./routes/contact');
 
 const app = express();
-const PORT = 9001;
-
-// paths to our JSON "database" files
-const DATA_DIR = path.join(__dirname, 'data');
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
-const LOGINS_FILE = path.join(DATA_DIR, 'login_logs.json');
-
-// quick helpers to read/write JSON files
-function readJSON(filePath) {
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch {
-    return [];
-  }
-}
-
-function writeJSON(filePath, data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-}
+const server = http.createServer(app);
+initSocket(server);
+const PORT = process.env.PORT || 9001;
 
 
 // --- Middleware ---
 
-// let the React frontend (port 5173) talk to this API
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
 
-// log every request that comes in
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
-// serve static files (admin portal, etc.)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/admin', express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
 
 
 // --- Routes ---
 
-// health check
-app.get('/', (req, res) => {
-  res.json({ message: 'EventSphere Backend is running!', port: PORT });
-});
-
-// public — anyone can browse events
-// public routes
 app.use('/api/events', eventsRouter);
-app.use('/api/contact', contactRouter); // ✅ ADD THIS
+app.use('/api/contact', contactRouter);
 
-
-// admin routes — separate router so adminAuth runs on everything under /api/admin
 const adminRouter = express.Router();
-adminRouter.use(adminAuth); // token check before any admin action
+adminRouter.use(adminAuth);
 adminRouter.use('/events', eventsRouter);
 app.use('/api/admin', adminRouter);
 
 
 // --- Auth ---
 
-// register a new user
-app.post('/api/auth/register', (req, res, next) => {
+app.post('/api/auth/register', async (req, res, next) => {
   try {
     const { name, studentId, email, password, major } = req.body;
 
     if (!name || !studentId || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Missing required fields.' });
+      return res.status(400).json({ message: 'Missing fields' });
     }
 
-    const users = readJSON(USERS_FILE);
-
-    if (users.some(u => u.email === email)) {
-      return res.status(409).json({ success: false, message: 'Email already registered.' });
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(409).json({ message: 'Email already exists' });
     }
 
-    const newUser = {
-      id: Date.now(),
-      name,
-      studentId,
-      email,
-      password, // should hash this in production (bcrypt etc)
-      major: major || '',
-      registeredAt: new Date().toISOString()
-    };
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    users.push(newUser);
-    writeJSON(USERS_FILE, users);
+    await prisma.user.create({
+      data: { name, studentId, email, password: hashedPassword, major }
+    });
 
-    console.log(`New registration: ${name} (${email})`);
-    res.status(201).json({ success: true, message: 'Registration successful.' });
+    res.status(201).json({ success: true, message: 'User registered successfully' });
   } catch (err) {
     next(err);
   }
 });
 
-// login — saves to login_logs.json for tracking
-app.post('/api/auth/login', (req, res, next) => {
-  try {
-    const { username, password } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: 'Username and password are required.' });
+app.post('/api/auth/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password required' });
     }
 
-    const logins = readJSON(LOGINS_FILE);
-    const isAdmin = username === 'admin' || username.toLowerCase().startsWith('admin');
+    const user = await prisma.user.findUnique({ where: { email } });
 
-    const logEntry = {
-      id: Date.now(),
-      username,
-      isAdmin,
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
       success: true,
-      timestamp: new Date().toISOString()
-    };
-
-    logins.push(logEntry);
-    writeJSON(LOGINS_FILE, logins);
-
-    console.log(`Login: ${username} at ${logEntry.timestamp}`);
-    res.json({ success: true, isAdmin });
+      token,
+      user: { id: user.id, email: user.email }
+    });
   } catch (err) {
     next(err);
   }
@@ -148,7 +127,11 @@ app.post('/api/auth/login', (req, res, next) => {
 
 // --- Error handling ---
 
-// 404 — no matching route found
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/admin')) return next();
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
+});
+
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -156,8 +139,6 @@ app.use((req, res) => {
   });
 });
 
-// global error handler — catches anything passed via next(err)
-// needs all 4 params or express won't treat it as an error handler
 app.use((err, req, res, next) => {
   console.error(`[ERROR] ${err.message}`);
   console.error(err.stack);
@@ -172,9 +153,10 @@ app.use((err, req, res, next) => {
 
 // --- Start ---
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Socket.IO ready on ws://localhost:${PORT}`);
   console.log(`Admin Portal: http://localhost:${PORT}/admin/admin-portal.html`);
   console.log(`   POST   http://localhost:${PORT}/api/contact       (Submit contact form)`);
-console.log(`   GET    http://localhost:${PORT}/api/contact       (View all contacts)`);
+  console.log(`   GET    http://localhost:${PORT}/api/contact       (View all contacts)`);
 });

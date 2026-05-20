@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-export default function EventDetails({ show, events, onBack, categoryName }) {
+export default function EventDetails({ show, events, onBack, categoryName, viewerCount = 0 }) {
     const [paymentStatus, setPaymentStatus] = useState({});
 
     useEffect(() => {
@@ -17,7 +17,7 @@ export default function EventDetails({ show, events, onBack, categoryName }) {
         setPaymentStatus(prev => ({ ...prev, [eventId]: 'loading' }));
 
         try {
-            const res = await fetch(`http://localhost:9001/api/events/${eventId}/pay`, {
+            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:9001'}/api/events/${eventId}/pay`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -43,7 +43,27 @@ export default function EventDetails({ show, events, onBack, categoryName }) {
 
     return (
         <section id="event-details" className="event-details-section" style={sectionStyle}>
-            <h2>{title}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '0.5rem' }}>
+                <h2 style={{ margin: 0 }}>{title}</h2>
+                {viewerCount > 0 && (
+                    <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: 'rgba(5,150,105,0.1)',
+                        color: '#059669',
+                        border: '1px solid rgba(5,150,105,0.3)',
+                        borderRadius: '20px',
+                        padding: '4px 12px',
+                        fontSize: '0.8rem',
+                        fontWeight: 600
+                    }}>
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#059669', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
+                        {viewerCount} {viewerCount === 1 ? 'person' : 'people'} viewing
+                        <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
+                    </span>
+                )}
+            </div>
 
             <button
                 id="back-btn"
@@ -80,7 +100,7 @@ export default function EventDetails({ show, events, onBack, categoryName }) {
                                     <h3>{event.title}</h3>
                                     <p>{event.desc}</p>
 
-                                    {event.price && (
+                                    {event.price && typeof event.id === 'number' && (
                                         <div className="pay-btn-wrapper">
                                             {isPaid ? (
                                                 <span className="pay-btn pay-btn--success">

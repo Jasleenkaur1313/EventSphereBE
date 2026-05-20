@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EventSphere</title>
+</head>
+<body>
+
+<h1>Welcome to EventSphere 🎉</h1>
+
+<h2>Events:</h2>
+
+<ul>
+  <% events.forEach(event => { %>
+    <li>
+      <strong><%= event.title %></strong> - <%= event.category %>
+    </li>
+  <% }) %>
+</ul>
+
+</body>
+</html>

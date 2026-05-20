@@ -1,11 +1,11 @@
-const mongoose = require('mongoose');
+const prisma = require('../lib/prisma');
 
 const connectDB = async () => {
   try {
-    await mongoose.connect('mongodb+srv://ishita09990_db_user:Ishita123@cluster0.butedeg.mongodb.net/event-sphere');
-    console.log('MongoDB Connected ✅');
+    await prisma.$connect();
+    console.log('PostgreSQL Connected via Prisma ✅');
   } catch (err) {
-    console.error(err.message);
+    console.error('Database connection failed ❌:', err.message);
     process.exit(1);
   }
 };

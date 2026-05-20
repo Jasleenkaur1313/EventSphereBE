@@ -1,18 +1,17 @@
-
-
 const express = require('express');
 const router = express.Router();
-const Event = require('../models/Event');
+const prisma = require('../lib/prisma');
+const { getIO } = require('../socket');
 
 
-// ✅ GET all events (with optional category filter)
+// GET all events (with optional category filter)
 router.get('/', async (req, res, next) => {
   try {
     const { category } = req.query;
-
-    const filter = category ? { category } : {};
-    const events = await Event.find(filter);
-
+    const events = await prisma.event.findMany({
+      where: category ? { category } : undefined,
+      orderBy: { createdAt: 'desc' }
+    });
     res.json({ success: true, data: events });
   } catch (err) {
     next(err);
@@ -20,14 +19,14 @@ router.get('/', async (req, res, next) => {
 });
 
 
-// ✅ GET single event
+// GET single event
 router.get('/:id', async (req, res, next) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid event ID' });
 
-    if (!event) {
-      return res.status(404).json({ success: false, message: 'Event not found' });
-    }
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) return res.status(404).json({ success: false, message: 'Event not found' });
 
     res.json({ success: true, data: event });
   } catch (err) {
@@ -36,10 +35,10 @@ router.get('/:id', async (req, res, next) => {
 });
 
 
-// ✅ CREATE event
+// CREATE event
 router.post('/', async (req, res, next) => {
   try {
-    const { title, category, description, date, time, venue, image } = req.body;
+    const { title, category, description, date, time, venue, image, price } = req.body;
 
     if (!title || !category || !description || !date) {
       return res.status(400).json({
@@ -48,97 +47,123 @@ router.post('/', async (req, res, next) => {
       });
     }
 
-    const newEvent = new Event({
-      title,
-      category,
-      description,
-      date,
-      time: time || 'TBD',
-      venue: venue || 'TBD',
-      image: image || `https://placehold.co/400x250/cccccc/ffffff?text=${encodeURIComponent(title)}`
+    const newEvent = await prisma.event.create({
+      data: {
+        title,
+        category,
+        description,
+        date,
+        time: time || 'TBD',
+        venue: venue || 'TBD',
+        image: image || `https://placehold.co/400x250/cccccc/ffffff?text=${encodeURIComponent(title)}`,
+        price: price != null ? parseFloat(price) : null
+      }
     });
 
-    await newEvent.save();
+    try {
+      getIO().emit('event:created', { event: newEvent });
+      getIO().emit('notification', {
+        type: 'new',
+        message: `New event added: "${newEvent.title}"`,
+        category: newEvent.category,
+        eventId: newEvent.id
+      });
+    } catch (_) {}
 
-    res.status(201).json({
-      success: true,
-      message: 'Event created!',
-      data: newEvent
-    });
+    res.status(201).json({ success: true, message: 'Event created!', data: newEvent });
   } catch (err) {
     next(err);
   }
 });
 
 
-// ✅ UPDATE event
+// UPDATE event
 router.put('/:id', async (req, res, next) => {
   try {
-    const updated = await Event.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid event ID' });
 
-    if (!updated) {
-      return res.status(404).json({ success: false, message: 'Event not found' });
-    }
+    const { title, category, description, date, time, venue, image, price } = req.body;
 
-    res.json({
-      success: true,
-      message: 'Event updated!',
-      data: updated
+    const updated = await prisma.event.update({
+      where: { id },
+      data: {
+        ...(title !== undefined && { title }),
+        ...(category !== undefined && { category }),
+        ...(description !== undefined && { description }),
+        ...(date !== undefined && { date }),
+        ...(time !== undefined && { time }),
+        ...(venue !== undefined && { venue }),
+        ...(image !== undefined && { image }),
+        ...(price !== undefined && { price: parseFloat(price) })
+      }
     });
+
+    try {
+      getIO().emit('event:updated', { event: updated });
+      getIO().emit('notification', {
+        type: 'update',
+        message: `Event updated: "${updated.title}"`,
+        category: updated.category,
+        eventId: updated.id
+      });
+    } catch (_) {}
+
+    res.json({ success: true, message: 'Event updated!', data: updated });
   } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ success: false, message: 'Event not found' });
     next(err);
   }
 });
 
 
-// ✅ DELETE event
+// DELETE event
 router.delete('/:id', async (req, res, next) => {
   try {
-    const deleted = await Event.findByIdAndDelete(req.params.id);
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid event ID' });
 
-    if (!deleted) {
-      return res.status(404).json({ success: false, message: 'Event not found' });
-    }
+    const deleted = await prisma.event.delete({ where: { id } });
 
-    res.json({
-      success: true,
-      message: 'Event deleted!'
-    });
+    try {
+      getIO().emit('event:deleted', { eventId: deleted.id, title: deleted.title, category: deleted.category });
+      getIO().emit('notification', {
+        type: 'delete',
+        message: `Event removed: "${deleted.title}"`,
+        category: deleted.category,
+        eventId: deleted.id
+      });
+    } catch (_) {}
+
+    res.json({ success: true, message: 'Event deleted!' });
   } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ success: false, message: 'Event not found' });
     next(err);
   }
 });
 
 
-// ✅ PAYMENT (same logic, but fetch from DB)
+// PAYMENT
 router.post('/:id/pay', async (req, res, next) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid event ID' });
 
-    if (!event) {
-      return res.status(404).json({ success: false, message: 'Event not found' });
-    }
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) return res.status(404).json({ success: false, message: 'Event not found' });
 
     if (!event.price) {
-      return res.status(400).json({
-        success: false,
-        message: 'This event is free — no payment needed.'
-      });
+      return res.status(400).json({ success: false, message: 'This event is free — no payment needed.' });
     }
 
-    const bookingRef =
-      'BK-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+    const bookingRef = 'BK-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase();
 
     res.json({
       success: true,
       message: `Payment of Rs ${event.price} for "${event.title}" was successful!`,
       data: {
         bookingRef,
-        eventId: event._id,
+        eventId: event.id,
         eventTitle: event.title,
         amountPaid: event.price,
         paidAt: new Date().toISOString()
@@ -148,5 +173,6 @@ router.post('/:id/pay', async (req, res, next) => {
     next(err);
   }
 });
+
 
 module.exports = router;

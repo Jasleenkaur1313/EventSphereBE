@@ -801,6 +801,7 @@ Homepage:
                     </li>
                     <li><a href="#cal" id="calendarBtn">Calendar</a></li>
                     <li><a href="#contact">Contact us</a></li>
+                    <li><a href="#" id="logoutBtn">Logout</a></li>
                 </ul>
             </div>
         </nav>
@@ -881,7 +882,7 @@ Homepage:
 
         <!-- Categories Section -->
         <div class="top-categories-wrapper p-4 md:p-8 font-sans" id="categories">
-            <main class="max-w-7xl mx-auto">
+            <main style="margin:0 auto;" class="max-w-7xl mx-auto">
                 
                 <section class="mb-8 p-4 rounded-xl shadow-lg filter-section-tailwind">
                     <div class="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -1033,7 +1034,11 @@ Homepage:
     </div>
 
     <script>
-        // ===== Image Slider Functionality =====
+        // 🔐 Protect homepage
+        if (!localStorage.getItem("eventSphereAuthToken")) {
+        window.location.href = "http://localhost:5173";
+        }
+                // ===== Image Slider Functionality =====
         const slidesContainer = document.getElementById('slides');
         const dots = document.querySelectorAll('.dot');
         let slides = slidesContainer.children;
@@ -1488,7 +1493,23 @@ Homepage:
             // Smooth scroll back to the categories section
             topCategories.scrollIntoView({ behavior: "smooth" });
         });
-        
+        // ===== Logout Functionality =====
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        if (!localStorage.getItem("eventSphereAuthToken")) {
+        logoutBtn.style.display = "none";
+        }
+
+        if (logoutBtn) {
+        logoutBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+
+            localStorage.removeItem("eventSphereAuthToken");
+            localStorage.removeItem("eventSphereIsAdmin");
+
+            window.location.href = "http://localhost:5173";
+        });
+        }
     </script>
 
 </body>

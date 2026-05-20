@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import AdminPage from './pages/AdminPage';
+import LiveNotification from './components/LiveNotification';
+import socket from './socket';
 
 // Helper component to apply global styles based on dark mode state
 function AppWrapper({ children, isDarkMode }) {
@@ -20,6 +22,31 @@ export default function App() {
   const [authMessage, setAuthMessage] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [liveNotifications, setLiveNotifications] = useState([]);
+
+  const pushNotification = useCallback((data) => {
+    const id = Date.now() + Math.random();
+    setLiveNotifications(prev => [...prev.slice(-4), { ...data, id }]);
+  }, []);
+
+  const dismissNotification = useCallback((id) => {
+    setLiveNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
+  // Connect/disconnect socket with auth state
+  useEffect(() => {
+    if (isAuthenticated) {
+      socket.connect();
+    } else {
+      socket.disconnect();
+    }
+  }, [isAuthenticated]);
+
+  // Listen for server notifications
+  useEffect(() => {
+    socket.on('notification', pushNotification);
+    return () => socket.off('notification', pushNotification);
+  }, [pushNotification]);
 
   // Check authentication status on mount
   useEffect(() => {
@@ -46,6 +73,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    socket.disconnect();
     localStorage.removeItem('eventSphereAuthToken');
     localStorage.removeItem('eventSphereIsAdmin');
     // Clear cookie consent so banner shows on next login
@@ -73,6 +101,8 @@ export default function App() {
 
   return (
     <AppWrapper isDarkMode={isDarkMode}>
+      <LiveNotification notifications={liveNotifications} onDismiss={dismissNotification} />
+
       {authMessage && (
         <div className="fixed top-0 left-0 right-0 z-[1001] bg-red-600 text-white text-center py-3 font-bold shadow-xl animate-pulse">
           {authMessage}
